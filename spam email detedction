@@ -1,0 +1,63 @@
+# Spam Email Detection using SVM
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, classification_report
+
+# -----------------------------
+# Step 1: Load Dataset
+# -----------------------------
+# You can download "spam.csv" dataset from Kaggle (SMS Spam Collection Dataset)
+# Example structure:
+# v1 (label) | v2 (message)
+# ham        | "Hello, how are you?"
+# spam       | "You won $1000, click here"
+
+data = pd.read_csv("spam.csv", encoding="latin-1")
+data = data[['v1', 'v2']]   # Keep only label and text
+data.columns = ['label', 'text']
+
+# Convert labels: spam = 1, ham = 0
+data['label'] = data['label'].map({'ham': 0, 'spam': 1})
+
+# -----------------------------
+# Step 2: Split Dataset
+# -----------------------------
+X_train, X_test, y_train, y_test = train_test_split(
+    data['text'], data['label'], test_size=0.2, random_state=42
+)
+
+# -----------------------------
+# Step 3: Feature Extraction (TF-IDF)
+# -----------------------------
+vectorizer = TfidfVectorizer(stop_words='english', lowercase=True)
+X_train_tfidf = vectorizer.fit_transform(X_train)
+X_test_tfidf = vectorizer.transform(X_test)
+
+# -----------------------------
+# Step 4: Train SVM Model
+# -----------------------------
+model = SVC(kernel='linear', C=1.0)   # Linear SVM works well for text
+model.fit(X_train_tfidf, y_train)
+
+# -----------------------------
+# Step 5: Predictions
+# -----------------------------
+y_pred = model.predict(X_test_tfidf)
+
+# -----------------------------
+# Step 6: Evaluation
+# -----------------------------
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("\nClassification Report:\n", classification_report(y_test, y_pred))
+
+# -----------------------------
+# Step 7: Test with Custom Input
+# -----------------------------
+sample = ["Congratulations! You've won a $1000 Walmart gift card. Click here to claim now.",
+          "Hey Mukilan, are we meeting tomorrow for the project?"]
+
+sample_tfidf = vectorizer.transform(sample)
+print("Predictions:", model.predict(sample_tfidf))  # 1 = spam, 0 = ham
